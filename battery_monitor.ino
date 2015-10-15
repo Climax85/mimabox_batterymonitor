@@ -25,11 +25,10 @@ void loop(void)
   current_mA = ina219.getCurrent_mA();
   loadvoltage = busvoltage + (shuntvoltage / 1000);
   
-  Serial.print("Bus Voltage:   "); Serial.print(busvoltage); Serial.println(" V");
-  Serial.print("Shunt Voltage: "); Serial.print(shuntvoltage); Serial.println(" mV");
-  Serial.print("Load Voltage:  "); Serial.print(loadvoltage); Serial.println(" V");
-  Serial.print("Current:       "); Serial.print(current_mA); Serial.println(" mA");
-  Serial.println("");
+  //print measurements of INA219 to console
+  Serial.print("Load Voltage: "); Serial.print(loadvoltage); Serial.print(" V");
+  Serial.print(" - Current: "); Serial.print(current_mA); Serial.println(" mA");
 
-  delay(2000);
+  //measure every second
+  delay(1000);
 }
