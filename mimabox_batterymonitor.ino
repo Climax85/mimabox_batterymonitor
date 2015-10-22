@@ -9,20 +9,25 @@
 #define inaVoltageFactor 1.113
 
 //LCD Setup
-#define DC      10
-#define RST      9
-#define SCE      8
-#define SCLK     7
-#define MOSI     6
-#define WIDTH   84
-#define HEIGHT  48
-#define MAX_BUF_LENGTH 5
+#define DC              10
+#define RST              9
+#define SCE              8
+#define SCLK             7
+#define MOSI             6
+#define WIDTH           84
+#define HEIGHT          48
+#define MAX_BUF_LENGTH   5
+
 PCD8544 lcd(SCLK, MOSI, DC, RST, SCE);
 
 //SD Card
-File confFile;
-char buffer[MAX_BUF_LENGTH], timer = 0;
-float conf_value = 0;
+#define SDinterval       10    // schreibe alle 10s auf SD
+File   file;
+char   cbuffer, timer   = 0;
+String line             = "";
+char   capacityfile[15] = "capacity.txt";
+char   logfile[8]       = "log.txt";
+float  conf_value       = 0;
 
 
 //shunt current sensor
@@ -51,13 +56,16 @@ void setup(void)
 
   //SD-Card
   SD.begin(4);
-  confFile = SD.open("config.txt", FILE_READ);
-  for(int i = 0; i < 5; i++){ 
-    buffer[i] = confFile.read();
+  
+  // read current capacity of the battery 
+  file = SD.open(capacityfile, FILE_READ);
+  if (file) {
+    while( (cbuffer = file.read()) != '\n') {
+      line += cbuffer;
+    }
   }
-  conf_value = atof(buffer); 
-  confFile.close();
-   
+  file.close();
+  Serial.print("String: "); Serial.println(line);
 }
 
 void loop(void)
@@ -90,11 +98,20 @@ void loop(void)
 
   //write to SD Card
   timer++;
-  if(timer == 10){
-    conf_value = conf_value+1.0;
-    confFile = SD.open("config.txt", FILE_WRITE);
-    confFile.print(conf_value);
-    confFile.close();
+  if(timer == SDinterval){
+    // write logfile
+    file = SD.open(logfile, FILE_WRITE);
+    file.print("Load Voltage: "); file.print(loadvoltage, 4); file.print(" V");
+    file.print(" | Current: "); file.print(current_mA); file.print(" mA");
+    file.print(" | "); file.print(sum_mA); file.print(" mA");
+    file.print(" | "); file.print(sum_mA / 3600); file.println(" mAh");
+    file.close();
+    
+    // write current capacity to file
+    if ( SD.exists(capacityfile) ) SD.remove(capacityfile);
+    file = SD.open(capacityfile, FILE_WRITE);
+    file.println(sum_mA / 3600);
+    file.close();
     timer = 0;
   }
   //measure every second
