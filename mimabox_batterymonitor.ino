@@ -1,3 +1,5 @@
+#include <SPI.h>
+#include <SD.h>
 #include <Wire.h>
 #include <PCD8544.h>
 #include <Adafruit_INA219.h>
@@ -7,14 +9,21 @@
 #define inaVoltageFactor 1.113
 
 //LCD Setup
-#define SCLK    12
-#define MOSI    11
 #define DC      10
 #define RST      9
 #define SCE      8
+#define SCLK     7
+#define MOSI     6
 #define WIDTH   84
 #define HEIGHT  48
+#define MAX_BUF_LENGTH 5
 PCD8544 lcd(SCLK, MOSI, DC, RST, SCE);
+
+//SD Card
+File confFile;
+char buffer[MAX_BUF_LENGTH], timer = 0;
+float conf_value = 0;
+
 
 //shunt current sensor
 Adafruit_INA219 ina219;
@@ -39,6 +48,16 @@ void setup(void)
   
   //Initialize the INA219 - on I2C Bus (A4 & A5)
   ina219.begin();
+
+  //SD-Card
+  SD.begin(4);
+  confFile = SD.open("config.txt", FILE_READ);
+  for(int i = 0; i < 5; i++){ 
+    buffer[i] = confFile.read();
+  }
+  conf_value = atof(buffer); 
+  confFile.close();
+   
 }
 
 void loop(void)
@@ -66,8 +85,19 @@ void loop(void)
   Serial.print("Load Voltage: "); Serial.print(loadvoltage, 4); Serial.print(" V");
   Serial.print(" | Current: "); Serial.print(current_mA); Serial.print(" mA");
   Serial.print(" | "); Serial.print(sum_mA); Serial.print(" mA");
-  Serial.print(" | "); Serial.print(sum_mA / 3600); Serial.println(" mAh");
+  Serial.print(" | "); Serial.print(sum_mA / 3600); Serial.print(" mAh");
+  Serial.print(" | "); Serial.println(conf_value);
 
+  //write to SD Card
+  timer++;
+  if(timer == 10){
+    conf_value = conf_value+1.0;
+    confFile = SD.open("config.txt", FILE_WRITE);
+    confFile.print(conf_value);
+    confFile.close();
+    timer == 0;
+  }
   //measure every second
   delay(1000);
+  
 }
