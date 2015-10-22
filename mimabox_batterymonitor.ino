@@ -95,7 +95,7 @@ void loop(void)
     confFile = SD.open("config.txt", FILE_WRITE);
     confFile.print(conf_value);
     confFile.close();
-    timer == 0;
+    timer = 0;
   }
   //measure every second
   delay(1000);
